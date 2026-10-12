@@ -4,6 +4,6 @@
  */
 export const environment = {
   production: false,
-  supabaseUrl: '',
-  supabasePublishableKey: '',
+  supabaseUrl: 'https://razqbetogfeyldkhmsvu.supabase.co',
+  supabasePublishableKey: 'sb_publishable_bYuidF2CsAYn_evtlin73A_2OD7lwJS',
 };

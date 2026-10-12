@@ -6,7 +6,7 @@
 | ----- | ----- | ------ | ---------- | ----- |
 | 1 | Discovery and architecture plan | Completed | 2026-10-12 | Read-only audit; 4 planning docs authored. No website changes, no installs, no repo. |
 | 2 | Independent project foundation | Completed | 2026-10-12 | Angular 22 scaffold (CSR, strict) + Tailwind v4 + tokens/fonts/logo + ESLint/Vitest + structure + env templates + independent git history. Lint/test/build green. No remote created. |
-| 3 | Shared Supabase integration | Not started | — | — |
+| 3 | Shared Supabase integration | Completed | 2026-10-12 | Same live project verified (ACTIVE_HEALTHY) + public REST read ok. Client (publishable only) + shared domain models copy + dev env wired. Lint/test/build green. No schema change, no link, no secrets copied. |
 | 4 | Authentication and authorization | Not started | — | Blocked on roles/account-provisioning answers (see requirements). |
 | 5 | Admin layout and design system | Not started | — | — |
 | 6 | Admin data and feature integration | Not started | — | Some flows need clarification (see requirements). |
