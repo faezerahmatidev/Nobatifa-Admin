@@ -9,7 +9,7 @@
 | 3 | Shared Supabase integration | Completed | 2026-10-12 | Same live project verified (ACTIVE_HEALTHY) + public REST read ok. Client (publishable only) + shared domain models copy + dev env wired. Lint/test/build green. No schema change, no link, no secrets copied. |
 | 4 | Authentication and authorization | Completed | 2026-10-12 | Password login page + session + guard + 12 tests (lint/test/build green). RLS gap analysis in security plan: admin has zero data access — role policies await roles/provisioning answers. No website change, no remote. |
 | 5 | Admin layout and design system | Completed | 2026-10-12 | Sidebar shell + topbar + drawer, icon/button/4 states, Jalali date, staff card. Lint/test(24)/build green. Tables/dialogs/forms deferred to Phase 6 with first consumers. No remote. |
-| 6 | Admin data and feature integration | Not started | — | Some flows need clarification (see requirements). |
+| 6 | Admin data and feature integration | Partially Completed | 2026-10-12 | Typed public-read gateway + 4 tests (lint/test/build green). Role-gated features BLOCKED on unanswered roles/provisioning questions — no speculation implemented. No remote. |
 | 7 | Business operations and safety | Not started | — | — |
 | 8 | Testing and security verification | Not started | — | — |
 | 9 | Documentation and delivery readiness | Not started | — | Remote creation/push/deploy need per-action authorization. |

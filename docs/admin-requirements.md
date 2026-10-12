@@ -23,6 +23,10 @@ Multi-role RBAC UI, audit logs, notifications, payments, customer database beyon
 
 ## 3. Questions requiring answers before Phase 4/6 (do not guess)
 
+> UPDATE Phase 6: Q1+Q2 are now HARD BLOCKERS — role-gated features
+> (appointments/services/invoices/time-writes) cannot be built without them.
+> Only public reads (`CenterReadGateway`) were implemented.
+
 1. **Roles**: single admin per center or multiple staff/roles? Evidence shows one staffer (`محمد پشتیبان`) and zero role UI/docs.
 2. **Account provisioning**: no signup screen exists — how is the first admin account (and password) created for a center?
 3. **Invoice authorship**: which screen creates an invoice after service, and where do prices come from? (No price lists evidenced.)
