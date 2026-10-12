@@ -1,0 +1,57 @@
+/* Nobatifa design tokens — shared with Nobatifa-Website (same source values).
+   تنها جای تغییر رنگ‌ها. در کل پروژه فقط با اسم استفاده کن. */
+   در کل پروژه فقط با اسم استفاده کن (مثل bg-primary-base) و
+   برای عوض کردن یک رنگ فقط مقدار جلوی اسمش را اینجا عوض کن. */
+
+@theme {
+  /* Gray */
+  --color-gray-50: #f9fafa;
+  --color-gray-100: #f4f5f5;
+  --color-gray-200: #eceded;
+  --color-gray-300: #e0dfdf;
+  --color-gray-400: #bbbbbc;
+  --color-gray-500: #9c999d;
+  --color-gray-600: #737474;
+  --color-gray-700: #565650;
+  --color-gray-800: #404141;
+  --color-gray-900: #1f2020;
+
+  /* Primary */
+  --color-primary-pale: #e8e9fe;
+  --color-primary-soft: #9da4fa;
+  --color-primary-base: #4a62f6;
+  --color-primary-bold: #0f42f1;
+  --color-primary-deep: #0020d9;
+
+  /* Accent */
+  --color-accent-pale: #e5e6f1;
+  --color-accent-soft: #526a9f;
+  --color-accent-base: #1c3e70;
+  --color-accent-bold: #122859;
+
+  /* Success */
+  --color-success-pale: #ccfbce;
+  --color-success-soft: #7bfa99;
+  --color-success-base: #4af66a;
+  --color-success-bold: #00f22a;
+  --color-success-deep: #00ca37;
+
+  /* Danger */
+  --color-danger-pale: #ffeaee;
+  --color-danger-soft: #f49799;
+  --color-danger-base: #f6444d;
+  --color-danger-bold: #fb3531;
+  --color-danger-deep: #bd102b;
+
+  /* Warning */
+  --color-warning-pale: #ffe298;
+  --color-warning-soft: #fdba52;
+  --color-warning-base: #f69a4a;
+  --color-warning-bold: #f08145;
+
+  /* Info */
+  --color-info-pale: #c1e1ff;
+  --color-info-soft: #5cacff;
+  --color-info-base: #448ff6;
+  --color-info-bold: #467ce2;
+}
