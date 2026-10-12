@@ -1,7 +1,5 @@
-/* Nobatifa design tokens — shared with Nobatifa-Website (same source values).
-   تنها جای تغییر رنگ‌ها. در کل پروژه فقط با اسم استفاده کن. */
-   در کل پروژه فقط با اسم استفاده کن (مثل bg-primary-base) و
-   برای عوض کردن یک رنگ فقط مقدار جلوی اسمش را اینجا عوض کن. */
+/* Nobatifa design tokens — shared values with Nobatifa-Website.
+   تنها جای تغییر رنگ‌ها: در کل پروژه فقط با اسم استفاده کن. */
 
 @theme {
   /* Gray */
