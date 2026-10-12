@@ -22,3 +22,14 @@
 - No remote creation, push, publish, or deploy without explicit authorization.
 - No secrets in code, Git, logs, or screenshots. `service_role` never in browser code.
 - No `Nobatifa-Admin` directory or GitHub repo exists yet (verified 2026-10-12: local absent, GitHub 404).
+  (Update: local dir + independent git history created in Phase 2; GitHub repo
+  still not created — remote creation needs explicit authorization.)
+
+## Design review record (2026-10-12 — read-only + doc fixes, no execution)
+
+Reviewed schema/migrations/RPCs/RLS/Git; fixed doc tensions (§4 vs §7.1
+staff policies; `staff_day_overview` gated on §8.2; invite-row `FOR UPDATE`
+locking); appended §9 execution-readiness matrix to `admin-access-model.md`.
+No code, migration, SQL execution, DB connection/change, push, or phase
+start. Design is internally consistent and executable per §9.3 once the
+U-items are approved one by one.

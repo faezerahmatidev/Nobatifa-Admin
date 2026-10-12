@@ -102,8 +102,10 @@ readable only for customers holding appointments at the member's center
   {staff, receptionist}; inviter can NEVER modify/demote Owner rows, modify
   their own row, appoint Owner/Manager, transfer ownership, or escalate self.
   All enforced with `auth.uid()` inside the function, never client input.
-- Staff minimization: staff SELECT policies narrow to schedule + related
-  appointments; customer-field masking mechanism TBD (view or column grants).
+- Staff minimization: staff-specific appointment views stay DISABLED until
+  the §8.2 relation is approved — no staff SELECT policies are created
+  before then (resolves tension with §7.1). Customer-field masking
+  mechanism TBD (view or column grants) at that time.
 - `vehicles`: staff read for vehicles tied to own-center appointments
   (join), no staff writes (cars belong to customers).
 
@@ -135,7 +137,8 @@ No existing policy weakened; nothing applied.
 FACT: no staff link exists — `appointments(user_id=customer, center_id,
 vehicle_id, slot_id)` has no assignee column, and no shifts table exists.
 Therefore "نوبت‌های مرتبط با خودش" is currently INEXPRESSIBLE.
-- Interim (no schema change): staff reads go through a `SECURITY DEFINER`
+- DEFERRED until §8.2 approval (review instruction 7) — design retained,
+  not built: staff reads WOULD go through a `SECURITY DEFINER`
   read RPC, e.g. `staff_day_overview(p_center_id, p_date)`, returning ONLY
   operational columns: slot time/status, vehicle type + full plate,
   customer FIRST name only (no family name, no mobile). Enforced in DB
@@ -195,7 +198,8 @@ center_invites(
   checked against inviter role, all from `auth.uid()`, never client input).
 - Accept RPC (server-side): hash(token) match + `pending` + not expired +
   caller profile mobile == invite mobile (binds invite, blocks sharing) +
-  no existing membership → create membership, mark `consumed`. Rows are
+  no existing membership → lock invite row `FOR UPDATE`, create membership,
+  mark `consumed` (lock-first makes concurrent double-accept safe). Rows are
   never deleted (audit).
 - No direct grants on `center_invites` to authenticated (RPC-only writes);
   pending-invite listing for owner/manager of that center only.
@@ -269,7 +273,7 @@ Migrations (each gated, dev/test first, in order):
 
 RPCs proposed: `center_role` (helper), `invite_staff`, `accept_invite`,
 `cancel_appointment`, `complete_appointment`, `walkin_appointment`,
-`staff_day_overview` (minimized read shape).
+`staff_day_overview` (minimized read shape — GATED on §8.2 approval, never built before it).
 
 ### 8.5 Remaining risks and dependencies
 
@@ -283,3 +287,47 @@ RPCs proposed: `center_role` (helper), `invite_staff`, `accept_invite`,
   recovery plan; dev/test only until then.
 - R6. Cross-center isolation rests entirely on per-center parameterization
   — every future query/RPC must carry center_id from membership, never input.
+
+## 9. Execution readiness review (2026-10-12 — review only, nothing applied)
+
+### 9.1 Final matrix: proposed migrations and RPCs
+
+| Item | Status | Prerequisites | Dependencies | Risks | Required test |
+| ---- | ------ | ------------- | ------------ | ----- | ------------- |
+| M1 `center_memberships` + `center_role()` | Proposed | None (new objects) | — | Role-confusion if helper misused → keep single helper, definer-locked | Migration applies clean on disposable DB; helper returns caller role only |
+| M2 member RLS (reads) | Proposed | M1 | §8 matrix | Staff over-read → staff policies deferred; owner policies byte-identical (diff `pg_policies`) | Owner/manager/receptionist/staff × own/other-center/anon matrix incl. negatives |
+| M3 `center_invites` + invite/accept RPCs | Proposed | M1 | 72h expiry, token secrecy | Replay (mitigated: row lock + consumed), sharing (mitigated: mobile bind), escalation (matrix-checked) | Expired/consumed/replayed/wrong-mobile/role-escalation denials; no direct grants exist |
+| M4 cancel/complete RPCs | Proposed | M1 | Pending-only, lock order | Double transition (mitigated: status recheck under lock); deadlock (mitigated: fixed lock order) | Concurrent double-cancel; slot release verified; done-terminal; no DELETE grant |
+| M4b `walkin_appointment` RPC | Proposed | M1 | Customer + vehicle checks | Ownership corruption (mitigated: separate RPC, never reuse reserve) | Walk-in for existing/new customer; vehicle-ownership mismatch denied |
+| M5 `assigned_staff_id` + staff reads | BLOCKED (§8.2) | Assignment flow evidence + approval | §8.2 | — | — |
+| `staff_day_overview` | BLOCKED (§8.2) | M5 or explicit waiver | Minimized shape | PII leak if shape widens → shape reviewed per surface | — |
+| `done`-correction | DISABLED (by order) | Future approved design | — | Silent overwrites → forbidden until then | — |
+
+### 9.2 Unresolved decisions and approvers
+
+- U1 staff field sets per surface → approver: you (product).
+- U2 assignment flow + `assigned_staff_id` → approver: you (needs assignment UX evidence).
+- U3 walk-in customer identification UX → approver: you (product).
+- U4 `done`-correction mechanism → approver: you (future, explicit).
+- U5 owner-transfer mechanism → approver: you.
+- U6 invite delivery channel → approver: you (operational).
+- U7 platform provisioning path → approver: you/operator.
+- U8 production application + recovery plan → approver: you (separate order).
+
+### 9.3 Proposed execution order (independent, reviewable steps)
+
+- S1: M1 only → verify migration applies, website green, no behavior change.
+- S2: M2 → verify full RLS matrix incl. negatives on disposable DB.
+- S3: M3 → verify invite lifecycle incl. attack cases.
+- S4: M4/M4b → verify transitions, atomicity, concurrency, slot release.
+- S5: M5 (after U2) → verify staff scoping.
+- S6: Admin UI phases 6–7 against dev DB.
+- S7: Production (after U8) with backup + rollback rehearsed.
+
+### 9.4 Security + website-compatibility test checklist
+
+- RLS: owner policies byte-identical (`pg_policies` diff); anon reads unchanged (centers/days/slots 200; profiles/vehicles/appointments/invoices denied); cross-center denial for every role; staff update/delete denied; no `DELETE` on appointments for any role.
+- Functions: all `SECURITY DEFINER` with locked `search_path`; direct `EXECUTE` revoked from anon everywhere and from authenticated except `center_role` (policy evaluation) + RPCs (authenticated only).
+- Repo: secret scan clean (`service_role`/JWT/`sb_secret`/private keys); no secrets in new migration comments.
+- Website: `reserve_appointment`, trigger, seed untouched (diff); public REST reads unchanged; full user regression after any shared-DB change (SMS-dependent E2E where applicable).
+- Rollback per migration (new-objects-only → reverse DROP in dependency order), rehearsed on a disposable DB before any production step. Rollback of M1 requires M2–M4 first (dependency chain).
