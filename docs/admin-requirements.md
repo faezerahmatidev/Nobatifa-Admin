@@ -28,7 +28,9 @@ Multi-role RBAC UI, audit logs, notifications, payments, customer database beyon
 > Only public reads (`CenterReadGateway`) were implemented.
 
 1. **Roles**: single admin per center or multiple staff/roles? Evidence shows one staffer (`محمد پشتیبان`) and zero role UI/docs.
+   → ANSWERED preliminary 2026-10-12: Owner/Manager/Receptionist/Staff, per-center independent, multi-center membership. See `admin-access-model.md` §1–§3 (awaiting approval).
 2. **Account provisioning**: no signup screen exists — how is the first admin account (and password) created for a center?
+   → ANSWERED preliminary 2026-10-12: platform operator creates/confirms center + secure Owner invite; Owner invites own staff; never via signup/profile. See `admin-access-model.md` §5 (awaiting approval).
 3. **Invoice authorship**: which screen creates an invoice after service, and where do prices come from? (No price lists evidenced.)
 4. **Walk-in registration** (`ثبت مشتری`): exact fields and relation to user accounts/appointments?
 5. **Cancellation semantics**: admin cancels a booking → does the slot reopen? What do `done`/`cancelled` require?
