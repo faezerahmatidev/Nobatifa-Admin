@@ -123,3 +123,89 @@ c. Phase 7: admin operations hardening.
 d. Production application: separate explicit authorization with recovery plan.
 
 **Awaiting your approval of §2–§5 before anything is built or applied.**
+
+## 7. Requested clarifications (docs-only, 2026-10-12 — NOT implemented)
+
+Verified read-only against `20261012000000_core_schema.sql`,
+`20261012000001_rls_policies.sql`, `20261012000002_reserve_rpc.sql`.
+No existing policy weakened; nothing applied.
+
+### 7.1 Staff scope and the missing staff–appointment link (item 1)
+
+FACT: no staff link exists — `appointments(user_id=customer, center_id,
+vehicle_id, slot_id)` has no assignee column, and no shifts table exists.
+Therefore "نوبت‌های مرتبط با خودش" is currently INEXPRESSIBLE.
+- Interim (no schema change): staff reads go through a `SECURITY DEFINER`
+  read RPC, e.g. `staff_day_overview(p_center_id, p_date)`, returning ONLY
+  operational columns: slot time/status, vehicle type + full plate,
+  customer FIRST name only (no family name, no mobile). Enforced in DB
+  output shape, not UI. Exact field set: PROPOSED, confirm.
+- Later (needs migration approval): add nullable `assigned_staff_id →
+  profiles(id)` on appointments once an assignment flow is evidenced;
+  then staff sees rows assigned to them.
+- Customer minimization applies to every staff path (policies + RPC outputs).
+
+### 7.2 Member-directory reads (item 2)
+
+- Everyone: SELECT own `center_memberships` row(s) (`user_id = auth.uid()`).
+- Owner/Manager of a center: list that center's memberships + fellow members'
+  profile rows (names/mobile) via EXISTS-join on shared center + caller
+  privileged role — management necessity only.
+- Receptionist/Staff: NO directory; own row only.
+
+### 7.3 Cancel/complete RPC logic (item 3, proposed — not created)
+
+`cancel_appointment(p_appointment_id)` / `complete_appointment(...)`:
+1. Caller = `auth.uid()`, else 'ابتدا وارد شوید'.
+2. `SELECT appointment … FOR UPDATE`; missing → 'نوبت یافت نشد'.
+3. Role ∈ {owner, manager, receptionist} via ACTIVE membership
+   (membership-row existence = active) in `appointment.center_id`,
+   else 'دسترسی ندارید'. Staff denied.
+4. Cancel requires `status = 'pending'` else 'این نوبت قابل لغو نیست';
+   complete requires `pending` else 'این نوبت قابل ثبت نیست'.
+5. Same transaction: cancel → `cancelled` + slot back to `available`;
+   complete → `done`, slot stays `reserved`. Lock order convention
+   everywhere: appointment row, then slot row (reserve RPC touches only
+   slot + insert, so no opposite-order locker exists — no deadlock).
+6. Concurrent second attempt sees non-pending status → clean error, never
+   a double transition. `done`/`cancelled` terminal; no DELETE grant exists.
+7. `reserve_appointment` is deliberately UNTOUCHED (customer path sets
+   `user_id = auth.uid()`; staff walk-in needs a separate RPC — OPEN item).
+
+### 7.4 Invites with expiry/status/single-use (item 4, proposed — not created)
+
+```text
+center_invites(
+  id uuid PK,
+  center_id uuid FK → service_centers ON DELETE CASCADE,
+  role TEXT CHECK (role IN ('owner','manager','receptionist','staff')),
+  mobile TEXT NOT NULL,              -- invitee identity (no FK: may not exist yet)
+  token_hash TEXT NOT NULL UNIQUE,   -- sha256 hex, never plaintext
+  status TEXT CHECK (status IN ('pending','consumed','revoked')) DEFAULT 'pending',
+  expires_at timestamptz NOT NULL,   -- proposed 72h, CONFIRMABLE parameter
+  created_by uuid NOT NULL,          -- inviter auth.uid()
+  created_at timestamptz DEFAULT now(),
+  consumed_at timestamptz
+)
+```
+
+- Create-invite RPC: inviter owner → any role; manager → ONLY
+  {staff, receptionist}; others → deny. Never invite self; never touch
+  Owner rows unless inviter is Owner; no self-escalation (target role
+  checked against inviter role, all from `auth.uid()`, never client input).
+- Accept RPC (server-side): hash(token) match + `pending` + not expired +
+  caller profile mobile == invite mobile (binds invite, blocks sharing) +
+  no existing membership → create membership, mark `consumed`. Rows are
+  never deleted (audit).
+- No direct grants on `center_invites` to authenticated (RPC-only writes);
+  pending-invite listing for owner/manager of that center only.
+
+### 7.5 Compatibility review (item 5 — read-only, verified)
+
+- All existing owner-policies stay byte-identical; member additions are
+  separate policies/objects — nothing widened, anon grants unchanged.
+- `handle_new_user` trigger untouched (invites key on mobile string;
+  membership created at accept-time, no FK conflict pre-signup).
+- `reserve_appointment` untouched (see §7.3.7 walk-in note).
+- Dev seed unaffected (no new NOT NULL columns on existing tables).
+- New objects only → migration order safe whenever authorized.
