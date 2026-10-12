@@ -21,11 +21,11 @@
   appointments, but ONLY from cancellable states. Physical deletion of
   appointments is FORBIDDEN for all roles. `done` is FINAL and cannot be
   overwritten, except through an authorized, logged correction process
-  (mechanism TBD at implementation — must itself be approved).
+  (mechanism TBD at implementation - must itself be approved).
   Status change + slot release must be ATOMIC, authorized inside the
   secure backend/RPC path.
 - D6. Staff and invites (approved 2026-10-12): Staff is read-only by default
-  — schedule overview plus only their related appointments; customer data
+  - schedule overview plus only their related appointments; customer data
   minimized to operational necessity. Manager may invite ONLY Staff and
   Receptionist roles; Manager can NEVER appoint Owner/another Manager,
   transfer ownership, or escalate own permissions. Sensitive roles and
@@ -182,7 +182,7 @@ center_invites(
   mobile TEXT NOT NULL,              -- invitee identity (no FK: may not exist yet)
   token_hash TEXT NOT NULL UNIQUE,   -- sha256 hex, never plaintext
   status TEXT CHECK (status IN ('pending','consumed','revoked')) DEFAULT 'pending',
-  expires_at timestamptz NOT NULL,   -- proposed 72h, CONFIRMABLE parameter
+  expires_at timestamptz NOT NULL,   -- CONFIRMED 72h (round 3 final)
   created_by uuid NOT NULL,          -- inviter auth.uid()
   created_at timestamptz DEFAULT now(),
   consumed_at timestamptz
@@ -209,3 +209,77 @@ center_invites(
 - `reserve_appointment` untouched (see §7.3.7 walk-in note).
 - Dev seed unaffected (no new NOT NULL columns on existing tables).
 - New objects only → migration order safe whenever authorized.
+
+## 8. Final decisions round 3 (2026-10-12 — recorded, NOT implemented)
+
+### 8.1 Finalized
+
+- **Invite expiry = 72 hours** (was confirmable, now CONFIRMED). Token:
+  secure, unguessable, stored hashed, single-use. Expiry + consumption
+  validated server-side inside the accept RPC. No exceptions.
+- **Staff customer data**: minimal, task-necessary only. Exact field sets per
+  surface remain approval-gated at implementation time.
+- **Staff–appointment relation: DETERMINED IMPOSSIBLE from current data.**
+  `appointments` carries only customer/center/vehicle/slot — no staff
+  attribution exists anywhere in the schema (verified read-only). Therefore
+  NO relation is guessed, and staff-specific appointment views stay
+  DISABLED until §8.2 is approved.
+- **Walk-in is a SEPARATE path** (never `reserve_appointment`, see §8.3).
+  Owner-is-caller is NOT assumed.
+- **`done` correction: DISABLED in this stage.** Only the future requirement
+  is recorded (§8.5). No RPC, migration, or status change exists for it.
+
+### 8.2 Staff–appointment relation proposal (separate document, not built)
+
+Recommended: nullable `appointments.assigned_staff_id → profiles(id)`,
+set by walk-in/assignment flows (future), meaning "responsible staffer".
+Staff appointment views = rows where `assigned_staff_id = auth.uid()`.
+Alternative (only if multi-staff-per-appointment is ever required):
+a junction table — NOT recommended now, no evidence supports it.
+Needs explicit approval before any migration.
+
+### 8.3 Walk-in design + compatibility with current `reserve_appointment`
+
+Compatibility verdict (read-only review): REUSE IS IMPOSSIBLE. Current
+`reserve_appointment` hardcodes `user_id = auth.uid()` AND requires the
+vehicle to belong to `auth.uid()`. A staff walk-in books FOR a customer,
+violating both assumptions — forcing it through would corrupt ownership.
+Proposed separate `walkin_appointment(p_center_id, p_day_id, p_slot_id,
+p_customer_id, p_vehicle_id)` RPC: verifies caller has an ACTIVE membership
+with role ∈ {owner, manager, receptionist} in THAT center; verifies the
+customer profile exists; verifies the vehicle belongs to THE CUSTOMER;
+same slot-lock + atomic insert pattern; returns the appointment id.
+Customer identification UX at the desk (e.g. mobile lookup) is an OPEN
+detail for Phase 6, not decided here.
+
+### 8.4 Exact proposed inventory (listed only — nothing created or run)
+
+Migrations (each gated, dev/test first, in order):
+- M1 `center_memberships` table + `center_role()` helper.
+- M2 member RLS policies (appointments/vehicles/invoices/profiles/invites
+  reads; staff-narrowed shapes).
+- M3 `center_invites` table + create/accept invite RPCs (72h, hashed,
+  single-use, mobile-bound).
+- M4 `cancel_appointment` + `complete_appointment` RPCs (pending-only,
+  atomic, role-checked).
+- M5 (needs §8.2 approval first): `assigned_staff_id` + staff-scoped reads.
+- Walk-in RPC rides with the M4 batch (depends on M1 only).
+- Explicitly NOT listed: `done`-correction mechanism, seed changes,
+  any production application.
+
+RPCs proposed: `center_role` (helper), `invite_staff`, `accept_invite`,
+`cancel_appointment`, `complete_appointment`, `walkin_appointment`,
+`staff_day_overview` (minimized read shape).
+
+### 8.5 Remaining risks and dependencies
+
+- R1. Assignment flow UX unevidenced → M5 and staff views wait on it.
+- R2. Walk-in customer identification UX open (Phase 6 detail).
+- R3. Correction-for-`done` has no design yet by explicit order — any
+  future request restarts at documentation, never silent implementation.
+- R4. Staff accounts need password provisioning (Q2 mechanism) before any
+  live permission test; no test may use production data.
+- R5. Production application of M1–M4 needs separate authorization +
+  recovery plan; dev/test only until then.
+- R6. Cross-center isolation rests entirely on per-center parameterization
+  — every future query/RPC must carry center_id from membership, never input.
