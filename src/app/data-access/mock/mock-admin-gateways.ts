@@ -22,7 +22,7 @@ const INVOICE_ITEMS = [
 function invoiceSummary(index: number): AdminInvoiceSummary {
   return {
     id: `inv-${index}`,
-    customerName: 'علیرضا رمضانی',
+    customerName: 'فائزه رحمتی',
     dateTime: '1403/05/10 - 14:25',
     amountRial: 3000000,
   };
@@ -86,6 +86,27 @@ export class MockAppointmentsGateway implements AppointmentsGateway {
         slot.booking = null;
       }
     }
+    return respond(undefined);
+  }
+
+  registerWalkIn(
+    slotId: string,
+    customer: { name: string; mobile: string },
+  ): Observable<void> {
+    const slot = this.db.slots.find((item) => item.id === slotId);
+    if (!slot || slot.status !== 'empty') {
+      return fail('این ساعت قابل رزرو نیست');
+    }
+    if (!customer.name.trim() || !/^09\d{9}$/.test(customer.mobile.trim())) {
+      return fail('اطلاعات مشتری کامل نیست');
+    }
+    slot.status = 'booked';
+    slot.booking = {
+      customerName: customer.name.trim(),
+      mobile: customer.mobile.trim(),
+      carType: '—',
+      plate: '—',
+    };
     return respond(undefined);
   }
 }

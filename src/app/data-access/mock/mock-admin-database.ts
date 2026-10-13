@@ -5,7 +5,7 @@ import type { AdminDay, AdminSlot, ServiceItem } from '../admin-models';
 export const MOCK_LATENCY_MS = 150;
 
 const BOOKING = {
-  customerName: 'علیرضا رمضانی',
+  customerName: 'فائزه رحمتی',
   mobile: '09128573449',
   carType: 'پراید',
   plate: '45 س 365 11',
