@@ -3,6 +3,7 @@ import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth/auth-service';
+import { Modal } from '../../shared/ui/modal/modal';
 
 /**
  * Admin login (mobile + password, per Figma Auth screens).
@@ -11,7 +12,7 @@ import { AuthService } from '../../core/auth/auth-service';
  */
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Modal],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-auto flex min-h-dvh w-full max-w-7xl items-center gap-10 px-4 py-8">
@@ -56,6 +57,7 @@ import { AuthService } from '../../core/auth/auth-service';
         }
         <button
           type="button"
+          (click)="forgotOpen.set(true)"
           class="text-center text-xs font-bold text-primary-bold"
         >
           رمز عبور خود را فراموش کردید؟
@@ -75,6 +77,44 @@ import { AuthService } from '../../core/auth/auth-service';
         class="hidden max-h-[calc(100dvh-4rem)] w-auto max-w-[55%] self-center rounded-2xl lg:block"
       />
     </section>
+
+    <app-modal
+      [open]="forgotOpen()"
+      title="بازیابی رمز عبور"
+      size="sm"
+      (closed)="forgotOpen.set(false); forgotSent.set(false)"
+    >
+      @if (!forgotSent()) {
+        <p class="text-center text-sm leading-6 text-gray-600">
+          شماره موبایل خود را وارد کنید تا لینک بازیابی برایتان ارسال شود.
+        </p>
+        <form (submit)="$event.preventDefault(); sendResetLink()" class="mt-4 flex flex-col gap-4">
+          <input
+            [formControl]="resetMobile"
+            type="tel"
+            dir="rtl"
+            inputmode="tel"
+            placeholder="شماره موبایل"
+            aria-label="شماره موبایل بازیابی"
+            class="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-primary-base"
+          />
+          @if (resetMobile.invalid && resetMobile.touched) {
+            <p class="text-xs text-danger-bold" role="alert">شماره موبایل معتبر نیست</p>
+          }
+          <button
+            type="submit"
+            [disabled]="forgotBusy()"
+            class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary-base text-base font-bold text-white transition-colors hover:bg-primary-bold disabled:cursor-not-allowed disabled:bg-gray-300"
+          >
+            ارسال لینک بازیابی
+          </button>
+        </form>
+      } @else {
+        <p role="status" class="py-4 text-center text-sm leading-6 text-gray-700">
+          لینک بازیابی رمز عبور به شماره {{ resetMobile.value }} ارسال شد.
+        </p>
+      }
+    </app-modal>
   `,
 })
 export class LoginPage {
@@ -83,6 +123,13 @@ export class LoginPage {
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly forgotOpen = signal(false);
+  protected readonly forgotBusy = signal(false);
+  protected readonly forgotSent = signal(false);
+  protected readonly resetMobile = new FormControl('', {
+    validators: [Validators.required, Validators.pattern(/^09\d{9}$/)],
+    nonNullable: true,
+  });
   protected readonly mobile = new FormControl('', {
     validators: [Validators.required, Validators.pattern(/^09\d{9}$/)],
     nonNullable: true,
@@ -115,5 +162,17 @@ export class LoginPage {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected sendResetLink(): void {
+    if (this.resetMobile.invalid || this.forgotBusy()) {
+      this.resetMobile.markAsTouched();
+      return;
+    }
+    this.forgotBusy.set(true);
+    setTimeout(() => {
+      this.forgotBusy.set(false);
+      this.forgotSent.set(true);
+    }, 600);
   }
 }
