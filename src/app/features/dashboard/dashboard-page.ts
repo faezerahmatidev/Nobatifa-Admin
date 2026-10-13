@@ -20,7 +20,9 @@ import { Modal } from '../../shared/ui/modal/modal';
     <div class="mb-4 flex justify-end">
       <app-button variant="accent" size="sm" (click)="openWalkIn()">
         ثبت مشتری
-        <app-icon name="plus" [size]="14" />
+        <span class="flex size-5 items-center justify-center rounded-md border border-current">
+          <app-icon name="plus" [size]="12" />
+        </span>
       </app-button>
     </div>
     <div class="mb-4 flex flex-wrap items-center gap-2">
