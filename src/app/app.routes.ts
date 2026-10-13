@@ -13,6 +13,7 @@ export const routes: Routes = [
     component: AdminShell,
     canActivate: [authGuard],
     children: [
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
         loadComponent: () =>
