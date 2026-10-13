@@ -28,6 +28,7 @@ import { AuthService } from '../../core/auth/auth-service';
           <input
             [formControl]="mobile"
             type="tel"
+            dir="rtl"
             inputmode="tel"
             placeholder="شماره موبایل"
             aria-label="شماره موبایل"

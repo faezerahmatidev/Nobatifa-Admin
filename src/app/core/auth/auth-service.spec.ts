@@ -36,6 +36,20 @@ describe('toE164', () => {
 });
 
 describe('AuthService', () => {
+  it('logs in with the dev demo password without calling the api', async () => {
+    let called = false;
+    const service = setup({
+      signInWithPassword: () => {
+        called = true;
+        return Promise.resolve({ data: {}, error: null });
+      },
+    });
+    const user = await firstValueFrom(service.login('09123456789', 'admin1234'));
+    expect(user).toEqual({ id: 'dev-admin', mobile: '09123456789' });
+    expect(called).toBe(false);
+    expect(service.isLoggedIn()).toBe(true);
+  });
+
   it('logs in and stores the session user', async () => {
     const service = setup({
       signInWithPassword: () =>

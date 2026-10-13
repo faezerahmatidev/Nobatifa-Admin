@@ -1,7 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { firstValueFrom, from, map, Observable } from 'rxjs';
+import { firstValueFrom, from, map, Observable, of } from 'rxjs';
 import { SUPABASE_CLIENT } from '../backend/supabase-client';
+import { environment } from '../../../environments/environment';
 
 export interface AdminUser {
   readonly id: string;
@@ -31,6 +32,12 @@ export class AuthService {
   }
 
   login(mobile: string, password: string): Observable<AdminUser> {
+    // Dev-only demo login (documented): production always hits Supabase.
+    if (!environment.production && password === DEV_DEMO_PASSWORD) {
+      const admin: AdminUser = { id: 'dev-admin', mobile: mobile.trim() };
+      this.user.set(admin);
+      return of(admin);
+    }
     return from(
       this.supabase.auth.signInWithPassword({ phone: toE164(mobile), password }),
     ).pipe(
@@ -73,6 +80,9 @@ export class AuthService {
     );
   }
 }
+
+/** Dev-only demo password. NEVER accepted in production builds. */
+export const DEV_DEMO_PASSWORD = 'admin1234';
 
 /** Mirrors the user-app convention: Iranian `09…` mobiles map to E.164. */
 export function toE164(mobile: string): string {
