@@ -7,11 +7,14 @@ import { Button } from '../../shared/ui/button/button';
 import { ErrorState } from '../../shared/ui/states/error-state';
 import { Icon } from '../../shared/ui/icon/icon';
 import { LoadingState } from '../../shared/ui/states/loading-state';
+import { Modal } from '../../shared/ui/modal/modal';
 import { TextField } from '../../shared/ui/input/text-field';
+
+type ProfileDialog = 'mobile' | 'password' | null;
 
 @Component({
   selector: 'app-profile-page',
-  imports: [ReactiveFormsModule, Button, ErrorState, Icon, LoadingState, TextField],
+  imports: [ReactiveFormsModule, Button, ErrorState, Icon, LoadingState, Modal, TextField],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="mb-4 text-lg font-black text-gray-900">پروفایل</h1>
@@ -31,11 +34,11 @@ import { TextField } from '../../shared/ui/input/text-field';
         </p>
         <p class="text-xs text-gray-500" dir="ltr">{{ staff.centerCode }}</p>
         <div class="mt-2 flex gap-2">
-          <app-button variant="accent" size="sm">
+          <app-button variant="accent" size="sm" (click)="openDialog('mobile')">
             ویرایش شماره موبایل
             <app-icon name="pencil" [size]="12" />
           </app-button>
-          <app-button variant="accent" size="sm">
+          <app-button variant="accent" size="sm" (click)="openDialog('password')">
             ویرایش رمز عبور
             <app-icon name="pencil" [size]="12" />
           </app-button>
@@ -59,6 +62,69 @@ import { TextField } from '../../shared/ui/input/text-field';
         </form>
       </div>
     }
+
+    <app-modal
+      [open]="dialog() === 'mobile'"
+      title="ویرایش شماره موبایل"
+      size="sm"
+      (closed)="closeDialog()"
+    >
+      <form (submit)="$event.preventDefault(); saveMobile()" class="flex flex-col gap-4">
+        <input
+          [formControl]="newMobile"
+          type="tel"
+          dir="rtl"
+          inputmode="tel"
+          placeholder="شماره موبایل جدید"
+          aria-label="شماره موبایل جدید"
+          class="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-primary-base"
+        />
+        @if (newMobile.invalid && newMobile.touched) {
+          <p class="text-xs text-danger-bold" role="alert">شماره موبایل معتبر نیست</p>
+        }
+        @if (dialogError()) {
+          <p role="alert" class="text-center text-xs text-danger-bold">{{ dialogError() }}</p>
+        }
+        <app-button type="submit" size="lg" [fullWidth]="true" [disabled]="dialogBusy()">
+          ذخیره
+        </app-button>
+      </form>
+    </app-modal>
+
+    <app-modal
+      [open]="dialog() === 'password'"
+      title="ویرایش رمز عبور"
+      size="sm"
+      (closed)="closeDialog()"
+    >
+      <form (submit)="$event.preventDefault(); savePassword()" class="flex flex-col gap-4">
+        <input
+          [formControl]="currentPassword"
+          type="password"
+          placeholder="رمز عبور فعلی"
+          aria-label="رمز عبور فعلی"
+          autocomplete="current-password"
+          class="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-primary-base"
+        />
+        <input
+          [formControl]="newPassword"
+          type="password"
+          placeholder="رمز عبور جدید"
+          aria-label="رمز عبور جدید"
+          autocomplete="new-password"
+          class="h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-primary-base"
+        />
+        @if (dialogError()) {
+          <p role="alert" class="text-center text-xs text-danger-bold">{{ dialogError() }}</p>
+        }
+        @if (dialogSaved()) {
+          <p role="status" class="text-center text-xs text-success-deep">رمز عبور تغییر کرد</p>
+        }
+        <app-button type="submit" size="lg" [fullWidth]="true" [disabled]="dialogBusy()">
+          ذخیره
+        </app-button>
+      </form>
+    </app-modal>
   `,
 })
 export class ProfilePage implements OnInit {
@@ -76,6 +142,22 @@ export class ProfilePage implements OnInit {
   });
   protected readonly lastName = new FormControl('', {
     validators: [Validators.required],
+    nonNullable: true,
+  });
+  protected readonly dialog = signal<ProfileDialog>(null);
+  protected readonly dialogBusy = signal(false);
+  protected readonly dialogError = signal<string | null>(null);
+  protected readonly dialogSaved = signal(false);
+  protected readonly newMobile = new FormControl('', {
+    validators: [Validators.required, Validators.pattern(/^09\d{9}$/)],
+    nonNullable: true,
+  });
+  protected readonly currentPassword = new FormControl('', {
+    validators: [Validators.required],
+    nonNullable: true,
+  });
+  protected readonly newPassword = new FormControl('', {
+    validators: [Validators.required, Validators.minLength(4)],
     nonNullable: true,
   });
 
@@ -116,6 +198,62 @@ export class ProfilePage implements OnInit {
       this.saveError.set(error instanceof Error ? error.message : 'خطایی رخ داد');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  protected openDialog(kind: Exclude<ProfileDialog, null>): void {
+    this.newMobile.setValue('');
+    this.currentPassword.setValue('');
+    this.newPassword.setValue('');
+    this.dialogError.set(null);
+    this.dialogSaved.set(false);
+    this.dialog.set(kind);
+  }
+
+  protected closeDialog(): void {
+    this.dialog.set(null);
+  }
+
+  protected async saveMobile(): Promise<void> {
+    if (this.newMobile.invalid || this.dialogBusy()) {
+      this.newMobile.markAsTouched();
+      return;
+    }
+    this.dialogBusy.set(true);
+    this.dialogError.set(null);
+    try {
+      await firstValueFrom(this.gateway.updateMobile(this.newMobile.value.trim()));
+      await this.load();
+      this.closeDialog();
+    } catch (error) {
+      this.dialogError.set(error instanceof Error ? error.message : 'خطایی رخ داد');
+    } finally {
+      this.dialogBusy.set(false);
+    }
+  }
+
+  protected async savePassword(): Promise<void> {
+    if (
+      this.currentPassword.invalid ||
+      this.newPassword.invalid ||
+      this.dialogBusy()
+    ) {
+      this.currentPassword.markAsTouched();
+      this.newPassword.markAsTouched();
+      return;
+    }
+    this.dialogBusy.set(true);
+    this.dialogError.set(null);
+    this.dialogSaved.set(false);
+    try {
+      await firstValueFrom(
+        this.gateway.changePassword(this.currentPassword.value, this.newPassword.value.trim()),
+      );
+      this.dialogSaved.set(true);
+    } catch (error) {
+      this.dialogError.set(error instanceof Error ? error.message : 'خطایی رخ داد');
+    } finally {
+      this.dialogBusy.set(false);
     }
   }
 }

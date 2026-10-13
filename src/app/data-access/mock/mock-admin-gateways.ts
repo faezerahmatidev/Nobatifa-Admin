@@ -207,6 +207,21 @@ export class MockProfileGateway implements ProfileGateway {
     this.profile.lastName = lastName.trim();
     return respond(undefined);
   }
+
+  updateMobile(mobile: string): Observable<void> {
+    if (!/^09\d{9}$/.test(mobile.trim())) {
+      return fail('شماره موبایل معتبر نیست');
+    }
+    this.profile.mobile = mobile.trim();
+    return respond(undefined);
+  }
+
+  changePassword(current: string, next: string): Observable<void> {
+    if (!current || next.trim().length < 4) {
+      return fail('رمز عبور جدید باید حداقل ۴ رقم باشد');
+    }
+    return respond(undefined);
+  }
 }
 
 export const MOCK_PROFILE_PROVIDER = { provide: PROFILE_GATEWAY, useClass: MockProfileGateway };
