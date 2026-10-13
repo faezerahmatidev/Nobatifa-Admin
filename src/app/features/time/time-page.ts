@@ -4,7 +4,6 @@ import type { WorkSchedule } from '../../data-access/admin-models';
 import { SCHEDULE_GATEWAY } from '../../data-access/ports/schedule-gateway';
 import { Banner } from '../../shared/ui/banner/banner';
 import { Button } from '../../shared/ui/button/button';
-import { EmptyState } from '../../shared/ui/states/empty-state';
 import { ErrorState } from '../../shared/ui/states/error-state';
 import { Icon } from '../../shared/ui/icon/icon';
 import { LoadingState } from '../../shared/ui/states/loading-state';
@@ -37,7 +36,7 @@ function expandRanges(start: string, end: string): string[] {
 
 @Component({
   selector: 'app-time-page',
-  imports: [Banner, Button, EmptyState, ErrorState, Icon, LoadingState],
+  imports: [Banner, Button, ErrorState, Icon, LoadingState],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mb-4 flex flex-wrap items-center gap-2">
