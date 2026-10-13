@@ -18,7 +18,7 @@ import { Modal } from '../../shared/ui/modal/modal';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mb-4 flex justify-end">
-      <app-button variant="accent" size="sm" (click)="openWalkIn()">
+      <app-button variant="accent" (click)="openWalkIn()">
         ثبت مشتری
         <span class="flex size-5 items-center justify-center rounded-md border border-current">
           <app-icon name="plus" [size]="12" />
@@ -26,9 +26,9 @@ import { Modal } from '../../shared/ui/modal/modal';
       </app-button>
     </div>
     <div class="mb-4 flex flex-wrap items-center gap-2">
-      <h1 class="text-lg font-black text-gray-900">نوبت‌های امروز</h1>
+      <h1 class="text-xl font-black text-gray-900">نوبت‌های امروز</h1>
       <a routerLink="/appointments">
-        <app-button size="sm">
+        <app-button>
           مدیریت نوبت‌ها
           <app-icon name="appointments" [size]="14" />
         </app-button>
