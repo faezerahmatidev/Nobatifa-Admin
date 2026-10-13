@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../auth/auth-service';
 import { Button } from '../../shared/ui/button/button';
 import { Icon, type IconName } from '../../shared/ui/icon/icon';
+import { Modal } from '../../shared/ui/modal/modal';
 
 interface NavItem {
   path: string;
@@ -27,7 +28,7 @@ const NAV_ITEMS: readonly NavItem[] = [
  */
 @Component({
   selector: 'app-admin-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Button, Icon, NgTemplateOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Button, Icon, Modal, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex min-h-dvh bg-white">
@@ -82,7 +83,7 @@ const NAV_ITEMS: readonly NavItem[] = [
             <app-icon name="user" [size]="18" />
             {{ staffLabel() }}
           </a>
-          <app-button variant="text" [fullWidth]="true" (click)="logout()">
+          <app-button variant="text" [fullWidth]="true" (click)="confirmLogout.set(true)">
             <app-icon name="log-out" [size]="18" />
             خروج
           </app-button>
@@ -115,6 +116,25 @@ const NAV_ITEMS: readonly NavItem[] = [
         </main>
       </div>
     </div>
+
+    <app-modal
+      [open]="confirmLogout()"
+      title="خروج از حساب"
+      size="sm"
+      (closed)="confirmLogout.set(false)"
+    >
+      <p class="text-center text-sm leading-6 text-gray-700">
+        آیا مطمئن هستید که می‌خواهید خارج شوید؟
+      </p>
+      <div class="mt-4 grid grid-cols-2 gap-2">
+        <app-button variant="danger" [fullWidth]="true" (click)="logout()">
+          بله، خارج شو
+        </app-button>
+        <app-button variant="text" [fullWidth]="true" (click)="confirmLogout.set(false)">
+          انصراف
+        </app-button>
+      </div>
+    </app-modal>
   `,
 })
 export class AdminShell {
@@ -123,6 +143,7 @@ export class AdminShell {
 
   protected readonly navItems = NAV_ITEMS;
   protected readonly drawerOpen = signal(false);
+  protected readonly confirmLogout = signal(false);
   protected readonly today = signal(
     new Intl.DateTimeFormat('fa-IR', {
       weekday: 'long',
@@ -147,6 +168,7 @@ export class AdminShell {
   }
 
   protected async logout(): Promise<void> {
+    this.confirmLogout.set(false);
     await this.auth.logout();
     await this.router.navigate(['/login']);
   }
