@@ -10,6 +10,7 @@ export type IconName =
   | 'log-out'
   | 'menu'
   | 'x'
+  | 'info'
   | 'chevron-down';
 
 /** Outline icons (Lucide path data), sized via `size` input. */
@@ -88,6 +89,11 @@ export type IconName =
         @case ('x') {
           <path d="M18 6 6 18" />
           <path d="m6 6 12 12" />
+        }
+        @case ('info') {
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 16v-4" />
+          <path d="M12 8h.01" />
         }
         @case ('chevron-down') {
           <path d="m6 9 6 6 6-6" />

@@ -6,7 +6,7 @@ import { AuthService } from '../../core/auth/auth-service';
 
 /**
  * Admin login (mobile + password, per Figma Auth screens).
- * The "forgot password" link from Figma is deferred: its target flow is
+ * The "forgot password" link is visual-only for now; its target flow is
  * unevidenced (see docs/admin-requirements.md) and will not be invented here.
  */
 @Component({
@@ -14,11 +14,15 @@ import { AuthService } from '../../core/auth/auth-service';
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4">
-      <h1 class="text-center text-xl font-black text-gray-900">ورود به نوبتیفا</h1>
-      <p class="mt-2 text-center text-sm text-gray-500">
-        برای ورود به پنل مدیریت، شماره موبایل و رمز عبور خود را وارد کنید.
-      </p>
+    <section class="mx-auto flex min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8">
+      <div class="mx-auto flex w-full max-w-[400px] shrink-0 flex-col justify-center px-4">
+        <h1 class="flex items-center justify-center gap-2 text-xl font-black text-gray-900">
+          <img src="/logo.svg" alt="" class="h-10 w-auto" />
+          ورود به نوبتیفا
+        </h1>
+        <p class="mt-2 text-center text-sm text-gray-500">
+          برای ورود به پنل مدیریت، شماره موبایل و رمز عبور خود را وارد کنید.
+        </p>
       <form (submit)="$event.preventDefault(); submit()" class="mt-6 flex flex-col gap-4">
         <div class="flex flex-col gap-1">
           <input
@@ -50,6 +54,12 @@ import { AuthService } from '../../core/auth/auth-service';
           <p role="alert" class="text-center text-xs text-danger-bold">{{ error() }}</p>
         }
         <button
+          type="button"
+          class="text-center text-xs font-bold text-primary-bold"
+        >
+          رمز عبور خود را فراموش کردید؟
+        </button>
+        <button
           type="submit"
           [disabled]="busy()"
           class="inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary-base text-base font-bold text-white transition-colors hover:bg-primary-bold disabled:cursor-not-allowed disabled:bg-gray-300"
@@ -57,6 +67,12 @@ import { AuthService } from '../../core/auth/auth-service';
           ورود
         </button>
       </form>
+      </div>
+      <img
+        src="/images/auth-desktop.png"
+        alt=""
+        class="hidden max-h-[calc(100dvh-4rem)] w-auto max-w-[55%] self-center rounded-2xl lg:block"
+      />
     </section>
   `,
 })

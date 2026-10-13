@@ -13,6 +13,7 @@ describe('Icon', () => {
       'log-out',
       'menu',
       'x',
+      'info',
       'chevron-down',
     ] as const;
     for (const name of names) {
