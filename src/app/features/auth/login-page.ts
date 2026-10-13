@@ -14,8 +14,8 @@ import { AuthService } from '../../core/auth/auth-service';
   imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="mx-auto flex min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8">
-      <div class="mx-auto flex w-full max-w-[400px] shrink-0 flex-col justify-center px-4">
+    <section class="mx-auto flex min-h-dvh w-full max-w-7xl items-center gap-10 px-4 py-8">
+      <div class="mx-auto flex w-full max-w-[360px] shrink-0 flex-col justify-center px-4">
         <h1 class="flex items-center justify-center gap-2 text-xl font-black text-gray-900">
           <img src="/logo.svg" alt="" class="h-10 w-auto" />
           ورود به نوبتیفا

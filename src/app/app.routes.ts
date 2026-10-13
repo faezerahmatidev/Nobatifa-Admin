@@ -19,6 +19,12 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
         title: 'نوبتیفا | داشبورد',
       },
+      {
+        path: 'appointments',
+        loadComponent: () =>
+          import('./features/appointments/appointments-page').then((m) => m.AppointmentsPage),
+        title: 'نوبتیفا | نوبت‌ها',
+      },
     ],
   },
 ];
