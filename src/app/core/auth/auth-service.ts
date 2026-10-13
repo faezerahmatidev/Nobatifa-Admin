@@ -1,8 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { firstValueFrom, from, map, Observable, of } from 'rxjs';
-import { SUPABASE_CLIENT } from '../backend/supabase-client';
-import { environment } from '../../../environments/environment';
+import { firstValueFrom, Observable, tap, throwError } from 'rxjs';
+import { AUTH_GATEWAY } from './auth-gateway';
 
 export interface AdminUser {
   readonly id: string;
@@ -10,81 +8,44 @@ export interface AdminUser {
 }
 
 /**
- * Admin session over Supabase Auth (phone + password, per Figma login).
- * Guards are a usability layer only; data protection lives in RLS (Phase 4+).
+ * Admin session (mock backend only — see MockAuthGateway).
+ * Guards are a usability layer; no real authorization exists offline.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly supabase: SupabaseClient = inject(SUPABASE_CLIENT);
+  private readonly auth = inject(AUTH_GATEWAY);
 
   readonly user = signal<AdminUser | null>(null);
   readonly initialized = signal(false);
 
   async init(): Promise<void> {
-    const session = await firstValueFrom(this.refresh());
+    const session = await firstValueFrom(this.auth.currentSession());
     this.user.set(session);
     this.initialized.set(true);
-    this.supabase.auth.onAuthStateChange((_event, session) => {
-      this.user.set(
-        session?.user ? { id: session.user.id, mobile: session.user.phone ?? '' } : null,
-      );
-    });
   }
 
   login(mobile: string, password: string): Observable<AdminUser> {
-    // Dev-only demo login (documented): production always hits Supabase.
-    if (!environment.production && password === DEV_DEMO_PASSWORD) {
-      const admin: AdminUser = { id: 'dev-admin', mobile: mobile.trim() };
-      this.user.set(admin);
-      return of(admin);
+    try {
+      toE164(mobile);
+    } catch (error) {
+      return throwError(() => error);
     }
-    return from(
-      this.supabase.auth.signInWithPassword({ phone: toE164(mobile), password }),
-    ).pipe(
-      map(({ data, error }) => {
-        if (error) {
-          throw new Error(error.message);
-        }
-        const user = data.user;
-        if (!user) {
-          throw new Error('ورود ناموفق بود');
-        }
-        const admin: AdminUser = { id: user.id, mobile: user.phone ?? '' };
-        this.user.set(admin);
-        return admin;
-      }),
-    );
+    return this.auth
+      .login(mobile.trim(), password)
+      .pipe(tap((user) => this.user.set(user)));
   }
 
   async logout(): Promise<void> {
-    const { error } = await this.supabase.auth.signOut();
-    if (error) {
-      throw new Error(error.message);
-    }
+    await firstValueFrom(this.auth.logout());
     this.user.set(null);
   }
 
   isLoggedIn(): boolean {
     return this.user() !== null;
   }
-
-  private refresh(): Observable<AdminUser | null> {
-    return from(this.supabase.auth.getSession()).pipe(
-      map(({ data, error }) => {
-        if (error) {
-          throw new Error(error.message);
-        }
-        const user = data.session?.user;
-        return user ? { id: user.id, mobile: user.phone ?? '' } : null;
-      }),
-    );
-  }
 }
 
-/** Dev-only demo password. NEVER accepted in production builds. */
-export const DEV_DEMO_PASSWORD = 'admin1234';
-
-/** Mirrors the user-app convention: Iranian `09…` mobiles map to E.164. */
+/** Iranian `09…` mobiles map to E.164. */
 export function toE164(mobile: string): string {
   const value = mobile.trim();
   if (/^09\d{9}$/.test(value)) {

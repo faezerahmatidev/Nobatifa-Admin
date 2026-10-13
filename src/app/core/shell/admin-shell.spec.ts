@@ -1,54 +1,46 @@
+import { firstValueFrom } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Component } from '@angular/core';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_CLIENT } from '../backend/supabase-client';
+import { MOCK_AUTH_PROVIDER } from '../../data-access/mock/mock-auth-gateway';
 import { AdminShell } from './admin-shell';
 import { AuthService } from '../auth/auth-service';
 
 @Component({ template: '' })
 class Dummy {}
 
-function setup(user: { id: string; phone: string } | null): void {
+function setup(): void {
   TestBed.configureTestingModule({
     imports: [AdminShell],
     providers: [
       AuthService,
+      MOCK_AUTH_PROVIDER,
       provideRouter([{ path: 'login', component: Dummy }]),
-      {
-        provide: SUPABASE_CLIENT,
-        useValue: {
-          auth: {
-            getSession: () =>
-              Promise.resolve({ data: { session: user ? { user } : null }, error: null }),
-            signOut: () => Promise.resolve({ error: null }),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
-          },
-        } as unknown as SupabaseClient,
-      },
     ],
   });
 }
 
 describe('AdminShell', () => {
   it('renders nav, breadcrumb, date and staff card', async () => {
-    setup({ id: 'a1', phone: '+989123456789' });
+    setup();
+    const service = TestBed.inject(AuthService);
+    await firstValueFrom(service.login('09123456789', 'admin1234'));
     const fixture = TestBed.createComponent(AdminShell);
-    await TestBed.inject(AuthService).init();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     for (const label of ['داشبورد', 'نوبت‌ها', 'مدیریت زمان', 'فاکتورها', 'مدیریت خدمات']) {
       expect(el.textContent).toContain(label);
     }
     expect(el.textContent).toContain('پنل');
-    expect(el.textContent).toContain('+989123456789');
+    expect(el.textContent).toContain('09123456789');
     expect(el.querySelector('[data-testid="drawer-backdrop"]')).toBeNull();
   });
 
   it('opens and closes the mobile drawer', async () => {
-    setup({ id: 'a1', phone: '' });
+    setup();
+    const service = TestBed.inject(AuthService);
+    await firstValueFrom(service.login('09123456789', 'admin1234'));
     const fixture = TestBed.createComponent(AdminShell);
-    await TestBed.inject(AuthService).init();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     (el.querySelector('[aria-label="منو"]') as HTMLButtonElement).click();
@@ -60,9 +52,10 @@ describe('AdminShell', () => {
   });
 
   it('logs out and returns to login', async () => {
-    setup({ id: 'a1', phone: '' });
+    setup();
+    const service = TestBed.inject(AuthService);
+    await firstValueFrom(service.login('09123456789', 'admin1234'));
     const fixture = TestBed.createComponent(AdminShell);
-    await TestBed.inject(AuthService).init();
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     const logout = Array.from(el.querySelectorAll('button')).find(
@@ -75,7 +68,7 @@ describe('AdminShell', () => {
     ) as HTMLButtonElement;
     confirm.click();
     await fixture.whenStable();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     expect(TestBed.inject(Router).url).toBe('/login');
   });
 });

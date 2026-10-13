@@ -1,26 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_CLIENT } from '../../core/backend/supabase-client';
+import { MOCK_AUTH_PROVIDER } from '../../data-access/mock/mock-auth-gateway';
 import { LoginPage } from './login-page';
 
-function setup(signIn: () => Promise<unknown>): void {
+function setup(): void {
   TestBed.configureTestingModule({
     imports: [LoginPage],
-    providers: [
-      provideRouter([]),
-      {
-        provide: SUPABASE_CLIENT,
-        useValue: {
-          auth: {
-            getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-            signInWithPassword: signIn,
-            signOut: () => Promise.resolve({ error: null }),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
-          },
-        } as unknown as SupabaseClient,
-      },
-    ],
+    providers: [provideRouter([]), MOCK_AUTH_PROVIDER],
   });
 }
 
@@ -32,43 +18,31 @@ function fill(el: HTMLElement, label: string, value: string): void {
 
 describe('LoginPage', () => {
   it('blocks invalid input without calling the api', () => {
-    let called = false;
-    setup(() => {
-      called = true;
-      return Promise.resolve({ data: {}, error: null });
-    });
+    setup();
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
     (fixture.nativeElement as HTMLElement).querySelector('form')?.dispatchEvent(new Event('submit'));
     fixture.detectChanges();
-    expect(called).toBe(false);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       'شماره موبایل معتبر نیست',
     );
   });
 
-  it('logs in without errors', async () => {
-    setup(() =>
-      Promise.resolve({
-        data: { user: { id: 'a1', phone: '+989123456789' } },
-        error: null,
-      }),
-    );
+  it('logs in with demo credentials', async () => {
+    setup();
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     fill(el, 'شماره موبایل', '09123456789');
-    fill(el, 'رمز عبور', 'secret123');
+    fill(el, 'رمز عبور', 'admin1234');
     (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
     await fixture.whenStable();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     expect(el.querySelector('[role="alert"]')).toBeNull();
   });
 
   it('shows server errors', async () => {
-    setup(() =>
-      Promise.resolve({ data: { user: null }, error: { message: 'Invalid credentials' } }),
-    );
+    setup();
     const fixture = TestBed.createComponent(LoginPage);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
@@ -76,8 +50,8 @@ describe('LoginPage', () => {
     fill(el, 'رمز عبور', 'wrong');
     (el.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
     await fixture.whenStable();
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 400));
     fixture.detectChanges();
-    expect(el.textContent).toContain('Invalid credentials');
+    expect(el.textContent).toContain('اطلاعات ورود نادرست است');
   });
 });

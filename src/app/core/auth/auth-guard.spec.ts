@@ -1,37 +1,24 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Component } from '@angular/core';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_CLIENT } from '../backend/supabase-client';
+import { firstValueFrom } from 'rxjs';
+import { MOCK_AUTH_PROVIDER } from '../../data-access/mock/mock-auth-gateway';
 import { authGuard } from './auth-guard';
 import { AuthService } from './auth-service';
 
 @Component({ template: '' })
 class Dummy {}
 
-function setup(loggedIn: boolean): Router {
+function setup(): Router {
   TestBed.configureTestingModule({
     imports: [],
     providers: [
       AuthService,
+      MOCK_AUTH_PROVIDER,
       provideRouter([
         { path: 'login', component: Dummy },
         { path: '', component: Dummy, canActivate: [authGuard] },
       ]),
-      {
-        provide: SUPABASE_CLIENT,
-        useValue: {
-          auth: {
-            getSession: () =>
-              Promise.resolve({
-                data: loggedIn ? { session: { user: { id: 'a1', phone: '' } } } : { session: null },
-                error: null,
-              }),
-            signOut: () => Promise.resolve({ error: null }),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
-          },
-        } as unknown as SupabaseClient,
-      },
     ],
   });
   return TestBed.inject(Router);
@@ -39,14 +26,14 @@ function setup(loggedIn: boolean): Router {
 
 describe('authGuard', () => {
   it('allows logged-in admins', async () => {
-    const router = setup(true);
-    await TestBed.inject(AuthService).init();
+    const router = setup();
+    await firstValueFrom(TestBed.inject(AuthService).login('09123456789', 'admin1234'));
     expect(await router.navigate(['/'])).toBe(true);
     expect(router.url).toBe('/');
   });
 
   it('redirects guests to login', async () => {
-    const router = setup(false);
+    const router = setup();
     await TestBed.inject(AuthService).init();
     expect(await router.navigate(['/'])).toBe(true);
     expect(router.url).toBe('/login');
