@@ -17,6 +17,12 @@ import { Modal } from '../../shared/ui/modal/modal';
   imports: [ReactiveFormsModule, RouterLink, Banner, Button, EmptyState, ErrorState, Icon, LoadingState, Modal],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <div class="mb-4 flex justify-end">
+      <app-button variant="accent" size="sm" (click)="openWalkIn()">
+        ثبت مشتری
+        <app-icon name="plus" [size]="14" />
+      </app-button>
+    </div>
     <div class="mb-4 flex flex-wrap items-center gap-2">
       <h1 class="text-lg font-black text-gray-900">نوبت‌های امروز</h1>
       <a routerLink="/appointments">
@@ -25,11 +31,6 @@ import { Modal } from '../../shared/ui/modal/modal';
           <app-icon name="appointments" [size]="14" />
         </app-button>
       </a>
-      <span class="ms-auto"></span>
-      <app-button variant="accent" size="sm" (click)="openWalkIn()">
-        ثبت مشتری
-        <app-icon name="plus" [size]="14" />
-      </app-button>
     </div>
 
     <app-banner
@@ -58,14 +59,13 @@ import { Modal } from '../../shared/ui/modal/modal';
               </p>
             }
             @case ('booked') {
-              <div class="rounded-xl bg-white px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-                <p class="flex items-center justify-center gap-2 text-sm font-bold text-gray-800">
-                  <app-icon name="clock" [size]="16" />
-                  {{ slot.time }}
-                </p>
+              <div class="rounded-xl bg-white px-4 py-3 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
                 @if (slot.booking; as booking) {
-                  <p class="mt-1 text-center text-xs text-gray-600">
-                    {{ booking.customerName }} {{ booking.carType }} {{ booking.plate }}
+                  <p class="text-sm font-bold text-gray-800">
+                    {{ slot.time }} {{ booking.customerName }}
+                  </p>
+                  <p class="mt-1 text-xs text-gray-600">
+                    {{ booking.carType }} {{ booking.plate }}
                   </p>
                 }
               </div>
