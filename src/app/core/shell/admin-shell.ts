@@ -74,10 +74,14 @@ const NAV_ITEMS: readonly NavItem[] = [
           }
         </nav>
         <div class="mt-4 border-t border-gray-200 pt-4">
-          <p class="flex items-center gap-2 px-3 py-2 text-sm font-bold text-gray-800">
+          <a
+            routerLink="/profile"
+            (click)="drawerOpen.set(false)"
+            class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-100"
+          >
             <app-icon name="user" [size]="18" />
             {{ staffLabel() }}
-          </p>
+          </a>
           <app-button variant="text" [fullWidth]="true" (click)="logout()">
             <app-icon name="log-out" [size]="18" />
             خروج
@@ -133,6 +137,12 @@ export class AdminShell {
 
   protected currentSection(): string {
     const url = this.router.url;
+    if (url === '/profile' || url.startsWith('/profile/')) {
+      return 'پروفایل';
+    }
+    if (url.startsWith('/factors/')) {
+      return 'فاکتورها';
+    }
     return NAV_ITEMS.find((item) => url === item.path || url.startsWith(`${item.path}/`))?.label ?? 'داشبورد';
   }
 
