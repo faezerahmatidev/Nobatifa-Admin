@@ -10,6 +10,7 @@ export type IconName =
   | 'log-out'
   | 'menu'
   | 'x'
+  | 'plus'
   | 'info'
   | 'chevron-down';
 
@@ -89,6 +90,10 @@ export type IconName =
         @case ('x') {
           <path d="M18 6 6 18" />
           <path d="m6 6 12 12" />
+        }
+        @case ('plus') {
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
         }
         @case ('info') {
           <circle cx="12" cy="12" r="10" />

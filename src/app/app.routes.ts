@@ -9,10 +9,16 @@ export const routes: Routes = [
     title: 'نوبتیفا | ورود مدیریت',
   },
   {
-    // Feature children land in Phase 6; the guarded shell already works.
     path: '',
     component: AdminShell,
     canActivate: [authGuard],
-    children: [],
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard-page').then((m) => m.DashboardPage),
+        title: 'نوبتیفا | داشبورد',
+      },
+    ],
   },
 ];
