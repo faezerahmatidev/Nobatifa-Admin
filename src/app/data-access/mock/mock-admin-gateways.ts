@@ -1,7 +1,21 @@
 import { inject, Injectable } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { fail, MockAdminDatabase, respond } from './mock-admin-database';
-import type { AdminDay, AdminInvoice, AdminInvoiceSummary, AdminSlot } from '../admin-models';
+import type {
+  AdminDay,
+  AdminInvoice,
+  AdminInvoiceSummary,
+  AdminSlot,
+} from '../admin-models';
+import type {
+  CustomerCar,
+  NewCar,
+  RegistrationData,
+} from '../ports/customer-registration-gateway';
+import {
+  CUSTOMER_REGISTRATION_GATEWAY,
+  type CustomerRegistrationGateway,
+} from '../ports/customer-registration-gateway';
 import {
   APPOINTMENTS_GATEWAY,
   type AppointmentsGateway,
@@ -88,27 +102,6 @@ export class MockAppointmentsGateway implements AppointmentsGateway {
     }
     return respond(undefined);
   }
-
-  registerWalkIn(
-    slotId: string,
-    customer: { name: string; mobile: string },
-  ): Observable<void> {
-    const slot = this.db.slots.find((item) => item.id === slotId);
-    if (!slot || slot.status !== 'empty') {
-      return fail('این ساعت قابل رزرو نیست');
-    }
-    if (!customer.name.trim() || !/^09\d{9}$/.test(customer.mobile.trim())) {
-      return fail('اطلاعات مشتری کامل نیست');
-    }
-    slot.status = 'booked';
-    slot.booking = {
-      customerName: customer.name.trim(),
-      mobile: customer.mobile.trim(),
-      carType: '—',
-      plate: '—',
-    };
-    return respond(undefined);
-  }
 }
 
 export const MOCK_APPOINTMENTS_PROVIDER = {
@@ -179,6 +172,9 @@ export class MockInvoicesGateway implements InvoicesGateway {
       trackingCode: '000085752257',
       serviceCenterName: 'اتوسرویس محمد',
       items: INVOICE_ITEMS,
+      mileageKm: 30000,
+      nextMileageKm: 36000,
+      oilType: 'سوپر پایا 10W40',
     });
   }
 }
@@ -225,3 +221,92 @@ export class MockProfileGateway implements ProfileGateway {
 }
 
 export const MOCK_PROFILE_PROVIDER = { provide: PROFILE_GATEWAY, useClass: MockProfileGateway };
+
+let carSeq = 0;
+
+@Injectable()
+export class MockCustomerRegistrationGateway implements CustomerRegistrationGateway {
+  private readonly cars = new Map<string, CustomerCar[]>();
+
+  sendOtp(mobile: string): Observable<void> {
+    if (!/^09\d{9}$/.test(mobile.trim())) {
+      return fail('شماره موبایل معتبر نیست');
+    }
+    return respond(undefined);
+  }
+
+  verifyOtp(mobile: string, code: string): Observable<{ isNew: boolean }> {
+    if (!/^09\d{9}$/.test(mobile.trim())) {
+      return fail('شماره موبایل معتبر نیست');
+    }
+    if (code.trim() !== '1234') {
+      return fail('کد تایید نادرست است');
+    }
+    return respond({ isNew: mobile.trim() !== '09128573449' });
+  }
+
+  getCars(mobile: string): Observable<CustomerCar[]> {
+    const key = mobile.trim();
+    if (!this.cars.has(key)) {
+      this.cars.set(
+        key,
+        key === '09128573449'
+          ? [
+              { id: 'cc-1', type: 'پراید', plate: '45 س 365 11' },
+              { id: 'cc-2', type: 'پراید', plate: '45 س 365 11' },
+              { id: 'cc-3', type: 'پراید', plate: '45 س 365 11' },
+              { id: 'cc-4', type: 'پراید', plate: '45 س 365 11' },
+            ]
+          : [],
+      );
+    }
+    return respond([...(this.cars.get(key) ?? [])]);
+  }
+
+  addCar(mobile: string, car: NewCar): Observable<CustomerCar> {
+    if (!car.type.trim() || !car.plate.trim()) {
+      return fail('اطلاعات خودرو کامل نیست');
+    }
+    carSeq += 1;
+    const created: CustomerCar = { id: `cc-new-${carSeq}`, type: car.type.trim(), plate: car.plate.trim() };
+    const key = mobile.trim();
+    this.cars.set(key, [...(this.cars.get(key) ?? []), created]);
+    return respond(created);
+  }
+
+  submit(data: RegistrationData): Observable<AdminInvoice> {
+    const items = data.services.map((service) => ({
+      title: service.title,
+      amountRial: service.priceRial,
+    }));
+    const total = items.reduce((sum, item) => sum + item.amountRial, 0);
+    const first = data.services[0];
+    return respond({
+      id: `inv-reg-${Date.now()}`,
+      customerName: `${data.firstName} ${data.lastName}`,
+      dateTime: '1403/05/10 - 14:25',
+      amountRial: total,
+      mobile: data.mobile,
+      carType: data.car.type,
+      plate: data.car.plate,
+      trackingCode: '000085752257',
+      serviceCenterName: 'اتوسرویس محمد',
+      items,
+      mileageKm: toLatinNumber(first?.kilometers) || 30000,
+      nextMileageKm: toLatinNumber(first?.nextKilometers) || 36000,
+      oilType: first?.oilType?.trim() || 'سوپر پایا 10W40',
+    });
+  }
+}
+
+function toLatinNumber(value: string | undefined): number {
+  const latin = (value ?? '')
+    .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/\D/g, '');
+  return latin ? Number(latin) : 0;
+}
+
+export const MOCK_CUSTOMER_REGISTRATION_PROVIDER = {
+  provide: CUSTOMER_REGISTRATION_GATEWAY,
+  useClass: MockCustomerRegistrationGateway,
+};

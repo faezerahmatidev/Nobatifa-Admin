@@ -42,6 +42,9 @@ export interface AdminInvoice extends AdminInvoiceSummary {
   trackingCode: string;
   serviceCenterName: string;
   items: readonly { title: string; amountRial: number }[];
+  mileageKm: number;
+  nextMileageKm: number;
+  oilType: string;
 }
 
 export interface WorkSchedule {
