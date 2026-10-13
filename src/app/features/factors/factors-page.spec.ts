@@ -15,7 +15,7 @@ describe('FactorsPage', () => {
     await new Promise((resolve) => setTimeout(resolve, 400));
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('علیرضا رمضانی');
+    expect(el.textContent).toContain('فائزه رحمتی');
     expect(el.textContent).toContain('نمایش فاکتور');
     expect(el.querySelector('[aria-label="صفحه‌بندی"]')).toBeTruthy();
   }, 10000);

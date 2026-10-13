@@ -69,6 +69,11 @@ describe('AdminShell', () => {
       (button) => button.textContent?.trim() === 'خروج',
     ) as HTMLButtonElement;
     logout.click();
+    fixture.detectChanges();
+    const confirm = Array.from(el.querySelectorAll('button')).find(
+      (button) => (button as HTMLButtonElement).textContent?.trim() === 'بله، خارج شو',
+    ) as HTMLButtonElement;
+    confirm.click();
     await fixture.whenStable();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(TestBed.inject(Router).url).toBe('/login');

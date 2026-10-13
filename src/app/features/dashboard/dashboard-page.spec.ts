@@ -18,6 +18,6 @@ describe('DashboardPage', () => {
     expect(el.textContent).toContain('نوبت‌های امروز');
     expect(el.textContent).toContain('تعطیل');
     expect(el.textContent).toContain('نوبتی ثبت نشده');
-    expect(el.textContent).toContain('علیرضا رمضانی');
+    expect(el.textContent).toContain('فائزه رحمتی');
   }, 10000);
 });
