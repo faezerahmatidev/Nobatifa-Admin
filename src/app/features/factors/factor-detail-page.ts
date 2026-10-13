@@ -17,11 +17,16 @@ import { toFaDigits } from '../../shared/utils/fa-digits';
     <div class="mb-4 flex flex-wrap items-center gap-2">
       <h1 class="text-lg font-black text-gray-900">فاکتورها</h1>
       <span class="ms-auto"></span>
-      <app-button variant="accent" size="sm">
+      <app-button variant="accent" size="sm" (click)="share()">
         به اشتراک‌گذاری
         <app-icon name="send" [size]="14" />
       </app-button>
     </div>
+    @if (shared()) {
+      <p role="status" class="mb-4 text-center text-xs text-success-deep">
+        متن فاکتور در حافظه کپی شد
+      </p>
+    }
 
     @if (loading()) {
       <app-loading-state />
@@ -92,6 +97,7 @@ export class FactorDetailPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly invoice = signal<AdminInvoice | null>(null);
+  protected readonly shared = signal(false);
   protected readonly toFaDigits = toFaDigits;
 
   ngOnInit(): void {
@@ -109,5 +115,43 @@ export class FactorDetailPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected async share(): Promise<void> {
+    const invoice = this.invoice();
+    if (!invoice) {
+      return;
+    }
+    const text =
+      `فاکتور نوبتیفا - کد پیگیری ${invoice.trackingCode}\n` +
+      `${invoice.customerName} - ${invoice.serviceCenterName}\n` +
+      `مبلغ: ${invoice.amountRial} ریال`;
+    const canShare = (navigator as Navigator & {
+      share?: (data: { title: string; text: string; url: string }) => Promise<void>;
+    }).share;
+    try {
+      if (canShare) {
+        await canShare({ title: 'فاکتور نوبتیفا', text, url: window.location.href });
+        return;
+      }
+      await this.copyText(text);
+      this.shared.set(true);
+    } catch {
+      await this.copyText(text);
+      this.shared.set(true);
+    }
+  }
+
+  private async copyText(text: string): Promise<void> {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const area = document.createElement('textarea');
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    area.remove();
   }
 }
