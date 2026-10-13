@@ -21,6 +21,14 @@ export const routes: Routes = [
         title: 'نوبتیفا | داشبورد',
       },
       {
+        path: 'dashboard/register',
+        loadComponent: () =>
+          import('./features/customers/register-customer-page').then(
+            (m) => m.RegisterCustomerPage,
+          ),
+        title: 'نوبتیفا | ثبت مشتری',
+      },
+      {
         path: 'appointments',
         loadComponent: () =>
           import('./features/appointments/appointments-page').then((m) => m.AppointmentsPage),

@@ -164,6 +164,9 @@ export class AdminShell {
     if (url.startsWith('/factors/')) {
       return 'فاکتورها';
     }
+    if (url.startsWith('/dashboard/register')) {
+      return 'داشبورد / ثبت مشتری';
+    }
     return NAV_ITEMS.find((item) => url === item.path || url.startsWith(`${item.path}/`))?.label ?? 'داشبورد';
   }
 
