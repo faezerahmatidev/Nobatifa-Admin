@@ -59,7 +59,7 @@ const NAV_ITEMS: readonly NavItem[] = [
 
       <ng-template #sidebarContent>
         <div class="mb-6 flex items-center gap-2 px-2">
-          <img src="/logo.svg" alt="نوبتیفا" class="h-8 w-auto" />
+          <img src="logo.svg" alt="نوبتیفا" class="h-8 w-auto" />
         </div>
         <nav class="flex flex-1 flex-col gap-1">
           @for (item of navItems; track item.path) {

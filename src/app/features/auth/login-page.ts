@@ -18,7 +18,7 @@ import { Modal } from '../../shared/ui/modal/modal';
     <section class="mx-auto flex min-h-dvh w-full max-w-7xl items-center gap-10 px-4 py-8">
       <div class="mx-auto flex w-full max-w-[360px] shrink-0 flex-col justify-center px-4">
         <h1 class="flex items-center justify-center gap-2 text-xl font-black text-gray-900">
-          <img src="/logo.svg" alt="" class="h-10 w-auto" />
+          <img src="logo.svg" alt="" class="h-10 w-auto" />
           ورود به نوبتیفا
         </h1>
         <p class="mt-2 text-center text-sm text-gray-500">
@@ -72,7 +72,7 @@ import { Modal } from '../../shared/ui/modal/modal';
       </form>
       </div>
       <img
-        src="/images/auth-desktop.png"
+        src="images/auth-desktop.png"
         alt=""
         class="hidden max-h-[calc(100dvh-4rem)] w-auto max-w-[55%] self-center rounded-2xl lg:block"
       />
